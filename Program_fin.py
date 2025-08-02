@@ -30,6 +30,7 @@ if(len(arguments) == 3):
     candle_time_from = int(cfg.get("candle.time.from", 1000))
     candle_time_to = int(cfg.get("candle.time.to", 1800))
 
+
 #Создание сессии + вспомогательные функции
 spark = SparkSession.builder.master("local[*]").appName("Jap_Candles").getOrCreate()
 
@@ -62,15 +63,15 @@ def mapper(row):
 
 #Функция для вывода OHLC по списку цен
 def ohlc(row):
-    row = list(map(lambda elem: int(elem[1] * 10) / 10, sorted(list(row), key=lambda row: row[0])))
+    row = list(map(lambda elem: int(elem[1] * 10) / 10 if int(elem[1] * 100 % 10) < 5 else int(elem[1] * 10 + 1) / 10, sorted(list(row), key=lambda row: row[0])))
     return (row[0], max(row), min(row), row[-1])
 
 
 #Считывание DF из файла + сортировка по MOMENT и ID_DEAL (чтобы соответствовать условию про ID_DEAL) + приведение к удобному виду и фильтрация по входным данным из config.xml
 df = spark.read.csv(path=path_to_csv, sep=',', header=True, inferSchema=True).orderBy(["MOMENT", "ID_DEAL"], ascending=[True,True])
 df_new = df.select(col("#SYMBOL"), col("MOMENT"), col("PRICE_DEAL"))
-df_new_with_datetime = df_new.withColumn("DATE", (col("MOMENT") / (10 ** 9)).cast("int")).withColumn("TIME", (col("MOMENT") / (10 ** 5) % (10 ** 5)).cast("int"))
-df_filtered = df_new_with_datetime.filter((col("DATE") >= candle_date_from) & (col("DATE") <= candle_date_to) & (col("TIME") >= candle_time_from) & (col("TIME") <= candle_time_to)).select(col("#SYMBOL"), col("MOMENT"), col("PRICE_DEAL"))
+df_new_with_datetime = df_new.withColumn("DATE", (col("MOMENT") / (10 ** 9)).cast("int")).withColumn("TIME", (col("MOMENT") / (10 ** 5) % (10 ** 4)).cast("int"))
+df_filtered = df_new_with_datetime.filter((col("DATE") >= candle_date_from) & (col("DATE") < candle_date_to) & (col("TIME") >= candle_time_from) & (col("TIME") < candle_time_to)).select(col("#SYMBOL"), col("MOMENT"), col("PRICE_DEAL"))
 
 
 #Перевод из вида Row(SYMBOL, CANDLE_START, MOMENT, PRICE) сначала к RDD со строками вида ((SYMBOL, CANDLE_START), (MOMENT, PRICE)), \
