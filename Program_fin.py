@@ -85,8 +85,7 @@ for row in rdd_key_value.collect():
     instr, candles = row[0], sorted(list(row[1]), key=lambda elem: elem[0])
     path_to_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "instruments", instr.lower()+".csv")
     if not(os.path.exists(os.path.join(os.path.dirname(os.path.abspath(__file__)), "instruments"))): os.mkdir(os.path.join(os.path.dirname(os.path.abspath(__file__)), "instruments"))
-    file = open(path_to_file, "w+", encoding="utf-8")
-    for line in candles:
-        fin_line = ",".join([instr, str(line[0]), str(line[1]), str(line[2]), str(line[3]), str(line[4])])
-        file.write(fin_line + '\n')
-    file.close()
+    with open(path_to_file, "w+", encoding="utf-8") as file:
+        for line in candles:
+            fin_line = ",".join([instr, str(line[0]), str(line[1]), str(line[2]), str(line[3]), str(line[4])])
+            file.write(fin_line + '\n')
