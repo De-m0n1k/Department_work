@@ -89,3 +89,4 @@ for row in rdd_key_value.collect():
     for line in candles:
         fin_line = ",".join([instr, str(line[0]), str(line[1]), str(line[2]), str(line[3]), str(line[4])])
         file.write(fin_line + '\n')
+    file.close()
